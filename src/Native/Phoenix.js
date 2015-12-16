@@ -113,22 +113,25 @@ Elm.Native.Phoenix.make = function(localRuntime) {
 		var on = options.on;
 		while (on.ctor !== '[]') {
 			var hook = on._0;
-			channel.on(hook.event, function(msg) {
-				var response = hook.callback(msg);
-				switch (response.ctor) {
-					case 'Ignore':
-					  break;
-					case 'Leave':
-					  channel.leave();
-						break;
-					case 'SendMessage':
-					  Signal.sendMessage(response._0);
-					  break;
-					case "PerformTask":
-            Task.perform(response._0);
-            break;
+			function handler(hook) {
+				return function(msg) {
+					var response = hook.callback(msg);
+					switch (response.ctor) {
+						case 'Ignore':
+							break;
+						case 'Leave':
+							channel.leave();
+							break;
+						case 'SendMessage':
+							Signal.sendMessage(response._0);
+							break;
+						case "PerformTask":
+							Task.perform(response._0);
+							break;
+					}
 				}
-			});
+			}
+			channel.on(hook.event, handler(hook));
 			on = on._1;
     }
 		return channel;
